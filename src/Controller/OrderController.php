@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\CreateOrderRequest;
 use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Service\OrderService;
 use Nelmio\ApiDocBundle\Attribute\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,7 +36,7 @@ final class OrderController extends AbstractController
                 new OA\MediaType(
                     mediaType: 'application/json',
                     schema: new OA\Schema(
-                        required: ['userId', 'items'],
+                        required: ['user_id', 'items'],
                         type: 'object'
                     )
                 )
@@ -115,17 +116,17 @@ final class OrderController extends AbstractController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'customerEmail', type: 'string', example: 'user@example.com'),
+                        new OA\Property(property: 'customer_email', type: 'string', example: 'user@example.com'),
                         new OA\Property(property: 'status', type: 'string', example: 'NEW'),
-                        new OA\Property(property: 'totalPrice', type: 'number', format: 'float', example: 85.50),
-                        new OA\Property(property: 'createdAt', type: 'string', format: 'date-time', example: '2025-03-10T09:30:00Z'),
+                        new OA\Property(property: 'total_price', type: 'number', format: 'float', example: 85.50),
+                        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2025-03-10T09:30:00Z'),
                         new OA\Property(
                             property: 'items',
                             type: 'array',
                             items: new OA\Items(
                                 properties: [
-                                    new OA\Property(property: 'productName', type: 'string', example: 'Keyboard'),
-                                    new OA\Property(property: 'unitPrice', type: 'number', format: 'float', example: 45.5),
+                                    new OA\Property(property: 'product_name', type: 'string', example: 'Keyboard'),
+                                    new OA\Property(property: 'unit_price', type: 'number', format: 'float', example: 45.5),
                                     new OA\Property(property: 'quantity', type: 'integer', example: 1)
                                 ]
                             )
@@ -151,33 +152,62 @@ final class OrderController extends AbstractController
     #[Route('/api/orders', name: 'list_orders', methods: ['GET'])]
     #[OA\Get(
         path: '/api/orders',
-        summary: 'List all orders',
+        summary: 'List all orders with pagination support',
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                description: 'Current page number',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                description: 'Number of orders per page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 10)
+            )
+        ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'List of orders',
+                description: 'Paginated list of orders',
                 content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'customerEmail', type: 'string', example: 'user@example.com'),
-                            new OA\Property(property: 'status', type: 'string', example: 'NEW'),
-                            new OA\Property(property: 'totalPrice', type: 'number', format: 'float', example: 85.50),
-                            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time', example: '2025-03-10T09:30:00Z'),
-                            new OA\Property(
-                                property: 'items',
-                                type: 'array',
-                                items: new OA\Items(
-                                    properties: [
-                                        new OA\Property(property: 'productName', type: 'string', example: 'Keyboard'),
-                                        new OA\Property(property: 'unitPrice', type: 'number', format: 'float', example: 45.5),
-                                        new OA\Property(property: 'quantity', type: 'integer', example: 1)
-                                    ]
-                                )
+                    properties: [
+                        new OA\Property(
+                            property: 'items',
+                            description: 'Orders on the current page',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'customer_email', type: 'string', example: 'user@example.com'),
+                                    new OA\Property(property: 'status', type: 'string', example: 'NEW'),
+                                    new OA\Property(property: 'total_price', type: 'number', format: 'float', example: 85.50),
+                                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2025-03-10T09:30:00Z'),
+                                    new OA\Property(
+                                        property: 'items',
+                                        description: 'List of order items',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(property: 'product_name', type: 'string', example: 'Keyboard'),
+                                                new OA\Property(property: 'unit_price', type: 'number', format: 'float', example: 45.5),
+                                                new OA\Property(property: 'quantity', type: 'integer', example: 1)
+                                            ],
+                                            type: 'object'
+                                        )
+                                    )
+                                ],
+                                type: 'object'
                             )
-                        ]
-                    )
+                        ),
+                        new OA\Property(property: 'total_count', type: 'integer', example: 25),
+                        new OA\Property(property: 'current_page', type: 'integer', example: 1),
+                        new OA\Property(property: 'limit', type: 'integer', example: 10)
+                    ],
+                    type: 'object'
                 )
             )
         ]
@@ -185,8 +215,38 @@ final class OrderController extends AbstractController
     #[Security(name: 'Bearer')]
     public function list(Request $request): JsonResponse
     {
-        return new JsonResponse($this->orderService->fetchAllOrders(
-            $request->query->getInt('page', 1)
-        ));
+        $pagination = $this->orderService->fetchAllOrders($request->query->getInt('page', 1));
+
+        $orders = array_map(
+            static function (Order $order): array {
+                return [
+                    'id' => $order->getId(),
+                    'customer_email' => $order->getUser()?->getEmail() ?? '',
+                    'status' => $order->getStatus(),
+                    'total_price' => $order->getTotalPrice(),
+                    'created_at' => $order->getCreatedAt(),
+                    'items' => array_map(
+                        static function (OrderItem $item): array {
+                            return [
+                                'product_name' => $item->getProductName(),
+                                'unit_price'   => $item->getUnitPrice(),
+                                'quantity'    => $item->getQuantity(),
+                            ];
+                        },
+                        $order->getItems()->toArray()
+                    ),
+                ];
+            },
+            $pagination->getItems()
+        );
+
+        $data = [
+            'items' => $orders,
+            'total_count' => $pagination->getTotalItemCount(),
+            'current_page' => $pagination->getCurrentPageNumber(),
+            'limit' => $pagination->getItemNumberPerPage(),
+        ];
+
+        return new JsonResponse($data);
     }
 }

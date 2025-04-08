@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
             )
         )
     ),
+    tags: ['Authentication'],
     responses: [
         new OA\Response(
             response: 201,
