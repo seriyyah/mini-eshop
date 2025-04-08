@@ -183,10 +183,10 @@ final class OrderController extends AbstractController
         ]
     )]
     #[Security(name: 'Bearer')]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        $orders = $this->orderService->getAllOrders();
-
-        return new JsonResponse($this->orderService->fetchAllOrders($orders));
+        return new JsonResponse($this->orderService->fetchAllOrders(
+            $request->query->getInt('page', 1)
+        ));
     }
 }

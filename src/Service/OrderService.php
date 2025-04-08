@@ -11,13 +11,16 @@ use App\Repository\OrderRepository;
 use App\Repository\UserRepository;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\Pagination\PaginationInterface;
+use Knp\Component\Pager\PaginatorInterface;
 
 class OrderService
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly OrderRepository $orderRepository,
-        private readonly UserRepository $userRepository
+        private readonly UserRepository $userRepository,
+        private readonly PaginatorInterface $paginator
     ) {
     }
 
@@ -51,11 +54,6 @@ class OrderService
         return $order;
     }
 
-    public function getAllOrders(): array
-    {
-        return $this->orderRepository->findAll();
-    }
-
     public function fetchOrder(Order $order): array
     {
         return [
@@ -72,8 +70,14 @@ class OrderService
         ];
     }
 
-    public function fetchAllOrders(array $orders): array
-    {
-        return array_map(fn($order) => $this->fetchOrder($order), $orders);
+    public function fetchAllOrders(
+        int $page = 1,
+        ?int $limit = 10
+    ): PaginationInterface {
+         return $this->paginator->paginate(
+            $this->orderRepository->createQueryBuilder('o')->orderBy('o.id', 'ASC'),
+            $page,
+            $limit
+        );
     }
 }

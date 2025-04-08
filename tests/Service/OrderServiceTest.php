@@ -13,6 +13,7 @@ use App\Repository\OrderRepository;
 use App\Repository\UserRepository;
 use App\Service\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use PHPUnit\Framework\TestCase;
 
 class OrderServiceTest extends TestCase
@@ -20,6 +21,7 @@ class OrderServiceTest extends TestCase
     private $entityManager;
     private $orderRepository;
     private $userRepository;
+    private $paginatorInterface;
     private OrderService $orderService;
 
     protected function setUp(): void
@@ -27,6 +29,7 @@ class OrderServiceTest extends TestCase
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->orderRepository = $this->createMock(OrderRepository::class);
         $this->userRepository = $this->createMock(UserRepository::class);
+        $this->paginatorInterface = $this->createMock(PaginatorInterface::class);
 
         $this->entityManager->expects($this->any())
             ->method('persist')
@@ -37,7 +40,8 @@ class OrderServiceTest extends TestCase
         $this->orderService = new OrderService(
             $this->entityManager,
             $this->orderRepository,
-            $this->userRepository
+            $this->userRepository,
+            $this->paginatorInterface
         );
     }
 
