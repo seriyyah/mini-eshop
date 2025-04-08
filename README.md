@@ -49,15 +49,18 @@ This is the Defend API project – a Symfony 7 application with JWT authenticati
 ## Accessing the API and Swagger Documentation
 
 1. **Swagger UI**
-   1. Open your browser and go to: http://localhost:9000/api/doc
-   2. Register a user 
-    ```bash
-   {
-    "email": "user@example.com",
-    "password": "your_password"
-    }
-   3. Login with your credentials
-   4. Copy the JWT token from the response
+   1. Generate a JWT token 
+       ```bash
+      php bin/console lexik:jwt:generate-keypair
+   2. Open your browser and go to: http://localhost:9000/api/doc
+   3. Register a user 
+       ```bash
+      {
+       "email": "user@example.com",
+       "password": "your_password"
+       }
+   4. Login with your credentials
+   5. Copy the JWT token from the response
 
 ## Running Tests
 
